@@ -1,13 +1,18 @@
 package repository
 
 import (
-	"cashapp/models"
+	"cashapp/internal/user/models"
 
 	"gorm.io/gorm"
 )
 
 type walletLayer struct {
 	db *gorm.DB
+}
+
+type WalletRepo interface {
+	Create(userId int) (*models.Wallet, error)
+	FindPrimaryWallet(userId int) (*models.Wallet, error)
 }
 
 func newWalletLayer(db *gorm.DB) *walletLayer {

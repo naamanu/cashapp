@@ -1,13 +1,18 @@
 package repository
 
 import (
-	"cashapp/models"
+	"cashapp/internal/user/models"
 
 	"gorm.io/gorm"
 )
 
 type userLayer struct {
 	db *gorm.DB
+}
+
+type UserRepo interface {
+	Create(user *models.User) error
+	FindByTag(tag string) (*models.User, error)
 }
 
 func newUserLayer(db *gorm.DB) *userLayer {
