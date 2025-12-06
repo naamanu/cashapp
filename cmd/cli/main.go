@@ -59,7 +59,25 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(createCmd, balanceCmd, sendCmd, seedCmd)
+	var verifyCmd = &cobra.Command{
+		Use:   "verify [tag] [doc_type]",
+		Short: "Start verification for a user",
+		Args:  cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			verifyUser(args[0], args[1])
+		},
+	}
+
+	var webhookCmd = &cobra.Command{
+		Use:   "webhook [tag] [status]",
+		Short: "Simulate identity webhook (status: passed/failed)",
+		Args:  cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			triggerWebhook(args[0], args[1])
+		},
+	}
+
+	rootCmd.AddCommand(createCmd, balanceCmd, sendCmd, seedCmd, verifyCmd, webhookCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -82,6 +100,39 @@ func checkBalance(tag string) {
 
 	resp := get(fmt.Sprintf("%s/wallets/%d/balance", ledgerSvcURL, walletID))
 	fmt.Println("Balance:", resp)
+}
+
+func verifyUser(tag, docType string) {
+	userID, _ := resolveUser(tag)
+	if userID == 0 {
+		fmt.Printf("User %s not found\n", tag)
+		return
+	}
+
+	payload := map[string]interface{}{
+		"user_id":       userID,
+		"document_type": docType,
+		"document_url":  "http://s3.aws.com/fake-doc.jpg",
+	}
+
+	resp := post(userSvcURL+"/verification/session", payload)
+	fmt.Println("Verify Response:", resp)
+}
+
+func triggerWebhook(tag, status string) {
+	userID, _ := resolveUser(tag)
+	if userID == 0 {
+		fmt.Printf("User %s not found\n", tag)
+		return
+	}
+
+	payload := map[string]interface{}{
+		"user_id": userID,
+		"status":  status,
+	}
+
+	resp := post(userSvcURL+"/webhooks/identity", payload)
+	fmt.Println("Webhook Response:", resp)
 }
 
 func sendMoney(fromTag, toTag, amountStr, desc string) {

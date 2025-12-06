@@ -13,12 +13,17 @@ type walletLayer struct {
 type WalletRepo interface {
 	Create(userId int) (*models.Wallet, error)
 	FindPrimaryWallet(userId int) (*models.Wallet, error)
+	Update(wallet *models.Wallet) error
 }
 
 func newWalletLayer(db *gorm.DB) *walletLayer {
 	return &walletLayer{
 		db: db,
 	}
+}
+
+func (wl *walletLayer) Update(wallet *models.Wallet) error {
+	return wl.db.Save(wallet).Error
 }
 
 func (wl *walletLayer) Create(userId int) (*models.Wallet, error) {

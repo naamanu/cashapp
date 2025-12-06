@@ -39,3 +39,4 @@ Thumbs.db
 # Build artifacts
 main
 cashapp
+bin/
