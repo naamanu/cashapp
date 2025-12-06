@@ -12,7 +12,6 @@ func RegisterUserRoutes(e *gin.Engine, s *service.UserService) {
 	// CreateUser creates a new user account
 	// @Router /users [post]
 	e.POST("/users", func(c *gin.Context) {
-
 		var req core.CreateUserRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -22,15 +21,26 @@ func RegisterUserRoutes(e *gin.Engine, s *service.UserService) {
 		}
 
 		response := s.CreateUser(req)
-
 		if response.Error {
 			c.JSON(response.Code, gin.H{
 				"message": response.Meta.Message,
 			})
 			return
 		}
-
 		c.JSON(response.Code, response.Meta)
 	})
 
+	// GetUser retrieves a user by tag
+	// @Router /users/:tag [get]
+	e.GET("/users/:tag", func(c *gin.Context) {
+		tag := c.Param("tag")
+		response := s.GetUser(tag)
+		if response.Error {
+			c.JSON(response.Code, gin.H{
+				"message": response.Meta.Message,
+			})
+			return
+		}
+		c.JSON(response.Code, response.Meta)
+	})
 }

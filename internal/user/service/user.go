@@ -45,3 +45,23 @@ func (s *UserService) CreateUser(req core.CreateUserRequest) core.Response {
 		"user": user,
 	}, core.String("user created successfully"))
 }
+
+func (s *UserService) GetUser(tag string) core.Response {
+	user, err := s.repository.Users.FindByTag(tag)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return core.Error(err, core.String("user not found"))
+		}
+		return core.Error(err, nil)
+	}
+
+	// Fetch primary wallet
+	wallet, err := s.repository.Wallets.FindPrimaryWallet(user.ID)
+	if err == nil {
+		user.Wallets = append(user.Wallets, *wallet)
+	}
+
+	return core.Success(&map[string]interface{}{
+		"user": user,
+	}, nil)
+}

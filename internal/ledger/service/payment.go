@@ -50,3 +50,14 @@ func (p *PaymentService) SendMoney(req core.CreatePaymentRequest) core.Response 
 
 	return core.Success(nil, nil)
 }
+
+func (p *PaymentService) GetBalance(walletID int) core.Response {
+	balance, err := p.repository.TransactionEvents.GetWalletBalance(walletID)
+	if err != nil {
+		return core.Error(err, nil)
+	}
+
+	return core.Success(&map[string]interface{}{
+		"balance": currency.ConvertPessewasToCedis(balance),
+	}, nil)
+}

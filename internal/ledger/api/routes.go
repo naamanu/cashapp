@@ -4,6 +4,7 @@ import (
 	"cashapp/core"
 	"cashapp/internal/ledger/service"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,6 +30,28 @@ func RegisterPaymentRoutes(e *gin.Engine, s *service.PaymentService) {
 			return
 		}
 
+		c.JSON(response.Code, response.Meta)
+	})
+
+	// GetBalance retrieves wallet balance
+	// @Router /wallets/:id/balance [get]
+	e.GET("/wallets/:id/balance", func(c *gin.Context) {
+		idStr := c.Param("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "invalid wallet id",
+			})
+			return
+		}
+
+		response := s.GetBalance(id)
+		if response.Error {
+			c.JSON(response.Code, gin.H{
+				"message": response.Meta.Message,
+			})
+			return
+		}
 		c.JSON(response.Code, response.Meta)
 	})
 }
