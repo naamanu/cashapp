@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.15-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git
@@ -20,15 +20,15 @@ RUN go mod download
 COPY . .
 
 # Generate Swagger documentation
-RUN swag init -g main.go -o ./docs || true
+RUN swag init -g cmd/ledger/main.go -o ./docs || true
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/ledger
 
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
+# Install ca-certificates
 RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
@@ -44,4 +44,3 @@ EXPOSE 5454
 
 # Run the application
 CMD ["./main"]
-

@@ -1,13 +1,19 @@
 package repository
 
 import (
-	"cashapp/models"
+	"cashapp/internal/ledger/models"
 
 	"gorm.io/gorm"
 )
 
 type transactionLayer struct {
 	db *gorm.DB
+}
+
+type TransactionRepo interface {
+	SQLTransaction(f func(tx *gorm.DB) error) error
+	Create(tx *gorm.DB, data *models.Transaction) error
+	Updates(tx *gorm.DB, transactions ...*models.Transaction) error
 }
 
 func newTransactionLayer(db *gorm.DB) *transactionLayer {

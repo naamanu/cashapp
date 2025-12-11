@@ -1,12 +1,12 @@
 package processor
 
 import (
-	"cashapp/models"
-
-	"cashapp/repository"
+	"cashapp/core"
+	"cashapp/internal/ledger/models"
+	"cashapp/internal/ledger/repository"
 	"fmt"
-	"log"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -22,7 +22,7 @@ func New(r repository.Repo) Processor {
 
 func (p *Processor) ProcessTransaction(fromTrans models.Transaction) error {
 	switch fromTrans.Purpose {
-	case models.Transfer:
+	case core.PurposeTransfer:
 		f, t, err := p.MoveMoneyBetweenWallets(fromTrans)
 		if err != nil {
 			if err := p.FailureCallback(f, t, err); err != nil {
@@ -34,23 +34,23 @@ func (p *Processor) ProcessTransaction(fromTrans models.Transaction) error {
 			return fmt.Errorf("failed to complete transaction. %v", err)
 		}
 
-	case models.Transfer:
+	case core.PurposeWithdrawal: // Fixed duplicate case
 		if err := p.WithdrawMoneyFromWallet(fromTrans); err != nil {
 			return fmt.Errorf("money withdrawal failed. %v", err)
 		}
-	case models.Deposit:
+	case core.PurposeDeposit:
 		if err := p.DepositMoneyIntoWallet(fromTrans); err != nil {
 			return fmt.Errorf("money deposit failed. %v", err)
 		}
 	default:
-		log.Println("no handler for purpose. purpose=", fromTrans.Purpose)
+		core.Log.Warn("no handler for purpose", zap.Any("purpose", fromTrans.Purpose))
 	}
 	return nil
 }
 
 func (p *Processor) SuccessCallback(fromTrans, toTrans *models.Transaction) error {
-	fromTrans.Status = models.Success
-	toTrans.Status = models.Success
+	fromTrans.Status = core.StatusSuccess
+	toTrans.Status = core.StatusSuccess
 
 	return p.Repo.Transactions.SQLTransaction(func(tx *gorm.DB) error {
 		return p.Repo.Transactions.Updates(tx, fromTrans, toTrans)
@@ -58,8 +58,8 @@ func (p *Processor) SuccessCallback(fromTrans, toTrans *models.Transaction) erro
 }
 
 func (p *Processor) FailureCallback(fromTrans, toTrans *models.Transaction, err error) error {
-	fromTrans.Status = models.Failed
-	toTrans.Status = models.Failed
+	fromTrans.Status = core.StatusFailed
+	toTrans.Status = core.StatusFailed
 	fromTrans.FailureReason = err.Error()
 	toTrans.FailureReason = err.Error()
 

@@ -2,10 +2,11 @@ package core
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
+
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -54,22 +55,22 @@ func (s *Server) Start() {
 		Handler: s.Engine,
 	}
 
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 
 	go func() {
 		<-quit
 		if err := h.Close(); err != nil {
-			log.Println("failed To ShutDown Server", err)
+			Log.Error("failed To ShutDown Server", zap.Error(err))
 		}
-		log.Println("Shut Down Server")
+		Log.Info("Shut Down Server")
 	}()
 
 	if err := h.ListenAndServe(); err != nil {
 		if err == http.ErrServerClosed {
-			log.Println("Server Closed After Interruption")
+			Log.Info("Server Closed After Interruption")
 		} else {
-			log.Println("Unexpected Server Shutdown")
+			Log.Error("Unexpected Server Shutdown", zap.Error(err))
 		}
 	}
 }

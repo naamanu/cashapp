@@ -1,10 +1,10 @@
 package core
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/rs/xid"
+	"go.uber.org/zap"
 )
 
 func String(v string) *string {
@@ -23,7 +23,7 @@ func GenerateRef() string {
 }
 
 func Error(err error, m *string) Response {
-	log.Println(err)
+	Log.Error("request failed", zap.Error(err))
 
 	var message string
 	if m == nil {

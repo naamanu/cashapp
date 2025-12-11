@@ -1,0 +1,8 @@
+basePath: /
+info:
+  contact: {}
+  description: User management service
+  title: CashApp User Service
+  version: "1.0"
+paths: {}
+swagger: "2.0"

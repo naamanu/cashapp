@@ -1,16 +1,21 @@
 package repository
 
 import (
+	"cashapp/core"
+	"cashapp/internal/ledger/models"
 	"fmt"
 	"strings"
-
-	"cashapp/models"
 
 	"gorm.io/gorm"
 )
 
 type eventLayer struct {
 	db *gorm.DB
+}
+
+type EventRepo interface {
+	GetWalletBalance(id int) (int64, error)
+	Save(tx *gorm.DB, data *models.TransactionEvent) error
 }
 
 func newEventLayer(db *gorm.DB) *eventLayer {
@@ -34,7 +39,7 @@ func (el *eventLayer) GetWalletBalance(id int) (int64, error) {
 		if err := rows.Scan(&amount, &event_type); err != nil {
 			return 0, fmt.Errorf("error reading amount/type: %v", err)
 		}
-		if strings.EqualFold(event_type, string(models.Debit)) {
+		if strings.EqualFold(event_type, string(core.TypeDebit)) {
 			balance -= amount
 		} else {
 			balance += amount

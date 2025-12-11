@@ -1,8 +1,9 @@
 package processor
 
 import (
+	"cashapp/core"
 	"cashapp/core/currency"
-	"cashapp/models"
+	"cashapp/internal/ledger/models"
 	"errors"
 	"fmt"
 
@@ -11,17 +12,17 @@ import (
 
 func (p *Processor) MoveMoneyBetweenWallets(fromTrans models.Transaction) (*models.Transaction, *models.Transaction, error) {
 
-	originWallet, err := p.Repo.Wallets.FindPrimaryWallet(fromTrans.From)
+	originWalletID, err := p.Repo.WalletLookup.GetPrimaryWalletID(fromTrans.From)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to find primary wallet for origin. %v", err)
 	}
 
-	destinationWallet, err := p.Repo.Wallets.FindPrimaryWallet(fromTrans.To)
+	destinationWalletID, err := p.Repo.WalletLookup.GetPrimaryWalletID(fromTrans.To)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to find primary wallet for destination. %v", err)
 	}
 
-	balance, err := p.Repo.TransactionEvents.GetWalletBalance(originWallet.ID)
+	balance, err := p.Repo.TransactionEvents.GetWalletBalance(originWalletID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load balance. %v", err)
 	}
@@ -36,9 +37,9 @@ func (p *Processor) MoveMoneyBetweenWallets(fromTrans models.Transaction) (*mode
 		Ref:         fromTrans.Ref,
 		Amount:      currency.ConvertCedisToPessewas(fromTrans.Amount),
 		Description: fromTrans.Description,
-		Direction:   models.Incoming,
-		Status:      models.Pending,
-		Purpose:     models.Transfer,
+		Direction:   core.DirectionIncoming,
+		Status:      core.StatusPending,
+		Purpose:     core.PurposeTransfer,
 	}
 
 	err = p.Repo.Transactions.SQLTransaction(func(tx *gorm.DB) error {
@@ -52,9 +53,9 @@ func (p *Processor) MoveMoneyBetweenWallets(fromTrans models.Transaction) (*mode
 	err = p.Repo.Transactions.SQLTransaction(func(tx *gorm.DB) error {
 		debit := models.TransactionEvent{
 			TransactionID: fromTrans.ID,
-			WalletID:      originWallet.ID,
+			WalletID:      originWalletID,
 			Amount:        fromTrans.Amount,
-			Type:          models.Debit,
+			Type:          core.TypeDebit,
 		}
 
 		if err := p.Repo.TransactionEvents.Save(tx, &debit); err != nil {
@@ -63,9 +64,9 @@ func (p *Processor) MoveMoneyBetweenWallets(fromTrans models.Transaction) (*mode
 
 		credit := models.TransactionEvent{
 			TransactionID: toTrans.ID,
-			WalletID:      destinationWallet.ID,
+			WalletID:      destinationWalletID,
 			Amount:        toTrans.Amount,
-			Type:          models.Credit,
+			Type:          core.TypeCredit,
 		}
 
 		if err := p.Repo.TransactionEvents.Save(tx, &credit); err != nil {
@@ -79,8 +80,8 @@ func (p *Processor) MoveMoneyBetweenWallets(fromTrans models.Transaction) (*mode
 		return nil, nil, fmt.Errorf("money movement failed. err=%v", err)
 	}
 
-	fromTrans.WalletID = originWallet.ID
-	toTrans.WalletID = destinationWallet.ID
+	fromTrans.WalletID = originWalletID
+	toTrans.WalletID = destinationWalletID
 
 	return &fromTrans, &toTrans, nil
 }

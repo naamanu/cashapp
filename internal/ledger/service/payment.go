@@ -1,41 +1,39 @@
-package services
+package service
 
 import (
 	"cashapp/core"
 	"cashapp/core/currency"
-
-	"cashapp/core/processor"
-
-	"cashapp/models"
-	"cashapp/repository"
+	"cashapp/internal/ledger/models"
+	"cashapp/internal/ledger/processor"
+	"cashapp/internal/ledger/repository"
 
 	"gorm.io/gorm"
 )
 
-type paymentLayer struct {
+type PaymentService struct {
 	repository repository.Repo
 	config     *core.Config
 	processor  processor.Processor
 }
 
-func newPaymentLayer(r repository.Repo, c *core.Config) *paymentLayer {
-	return &paymentLayer{
+func New(r repository.Repo, c *core.Config) *PaymentService {
+	return &PaymentService{
 		repository: r,
 		config:     c,
 		processor:  processor.New(r),
 	}
 }
 
-func (p *paymentLayer) SendMoney(req core.CreatePaymentRequest) core.Response {
+func (p *PaymentService) SendMoney(req core.CreatePaymentRequest) core.Response {
 	fromTrans := models.Transaction{
 		From:        req.From,
 		To:          req.To,
 		Ref:         core.GenerateRef(),
 		Amount:      currency.ConvertCedisToPessewas(req.Amount),
 		Description: req.Description,
-		Direction:   models.Outgoing,
-		Status:      models.Pending,
-		Purpose:     models.Transfer,
+		Direction:   core.DirectionOutgoing,
+		Status:      core.StatusPending,
+		Purpose:     core.PurposeTransfer,
 	}
 
 	err := p.repository.Transactions.SQLTransaction(func(tx *gorm.DB) error {

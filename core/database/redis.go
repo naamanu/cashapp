@@ -8,7 +8,7 @@ import (
 )
 
 func NewRedis(config *core.Config) *redis.Client {
-	if core.GetEnvironment() == core.Staging {
+	if config.ENVIRONMENT == core.Staging {
 		parsedURL, _ := url.Parse(config.REDIS_URL)
 		password, _ := parsedURL.User.Password()
 		return redis.NewClient(&redis.Options{
