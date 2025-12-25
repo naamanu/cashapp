@@ -7,6 +7,7 @@ type Repo struct {
 	Wallets           WalletRepo
 	IdentityDocuments IdentityDocumentRepo
 	FundingSources    FundingSourceRepo
+	Friendships       FriendshipRepo
 }
 
 func New(db *gorm.DB) Repo {
@@ -15,5 +16,6 @@ func New(db *gorm.DB) Repo {
 		Wallets:           newWalletLayer(db),
 		IdentityDocuments: newIdentityDocumentLayer(db),
 		FundingSources:    newFundingSourceLayer(db),
+		Friendships:       newFriendshipLayer(db),
 	}
 }

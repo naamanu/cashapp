@@ -206,3 +206,32 @@ func (s *UserService) Deposit(req core.DepositRequest) core.Response {
 		"currency":    wallet.Currency,
 	}, core.String("deposit successful"))
 }
+
+func (s *UserService) AddFriend(req core.CreateFriendshipRequest) core.Response {
+	// Check if already friends
+	if _, err := s.repository.Friendships.Find(req.UserID, req.FriendID); err == nil {
+		return core.Error(nil, core.String("already friends"))
+	}
+
+	// Create friendship (bi-directional for simplicity, or two rows)
+	// For MVP, one row implies check both ways or create 2 rows.
+	// Let's create two rows to simplify querying.
+
+	f1 := models.Friendship{
+		UserID:   req.UserID,
+		FriendID: req.FriendID,
+		Status:   "accepted", // Auto-accept for MVP
+	}
+	f2 := models.Friendship{
+		UserID:   req.FriendID,
+		FriendID: req.UserID,
+		Status:   "accepted",
+	}
+
+	if err := s.repository.Friendships.Create(&f1); err != nil {
+		return core.Error(err, core.String("failed to add friend"))
+	}
+	s.repository.Friendships.Create(&f2) // Ignore error for 2nd row for now
+
+	return core.Success(nil, core.String("friend added"))
+}

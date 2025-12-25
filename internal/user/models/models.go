@@ -18,11 +18,19 @@ const (
 
 type User struct {
 	core.Model
-	Tag       string    `json:"tag"`
-	Wallets   []Wallet  `json:"wallets"`
-	KYCLevel  int       `json:"kyc_level"` // 0: Unverified, 1: Basic, 2: Full
-	KYCStatus KYCStatus `json:"kyc_status" gorm:"default:'pending'"`
-	RiskScore int       `json:"risk_score"`
+	Tag            string    `json:"tag"`
+	Wallets        []Wallet  `json:"wallets"`
+	KYCLevel       int       `json:"kyc_level"` // 0: Unverified, 1: Basic, 2: Full
+	KYCStatus      KYCStatus `json:"kyc_status" gorm:"default:'pending'"`
+	RiskScore      int       `json:"risk_score"`
+	DefaultPrivacy string    `json:"default_privacy" gorm:"default:'public'"` // public, friends, private
+}
+
+type Friendship struct {
+	core.Model
+	UserID   int    `json:"user_id"`
+	FriendID int    `json:"friend_id"`
+	Status   string `json:"status"` // pending, accepted
 }
 
 type Wallet struct {

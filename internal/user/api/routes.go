@@ -130,4 +130,21 @@ func RegisterUserRoutes(e *gin.Engine, s *service.UserService) {
 		}
 		c.JSON(response.Code, response.Meta)
 	})
+
+	// Add Friend
+	// @Router /users/friends [post]
+	e.POST("/users/friends", func(c *gin.Context) {
+		var req core.CreateFriendshipRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
+
+		response := s.AddFriend(req)
+		if response.Error {
+			c.JSON(response.Code, gin.H{"message": response.Meta.Message})
+			return
+		}
+		c.JSON(response.Code, response.Meta)
+	})
 }

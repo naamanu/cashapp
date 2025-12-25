@@ -6,6 +6,7 @@ type Repo struct {
 	Transactions      TransactionRepo
 	TransactionEvents EventRepo
 	WalletLookup      WalletLookupRepo
+	PaymentRequests   PaymentRequestRepo
 }
 
 func New(db *gorm.DB) Repo {
@@ -13,5 +14,6 @@ func New(db *gorm.DB) Repo {
 		Transactions:      newTransactionLayer(db),
 		TransactionEvents: newEventLayer(db),
 		WalletLookup:      newWalletLookupLayer(db),
+		PaymentRequests:   newPaymentRequestLayer(db),
 	}
 }

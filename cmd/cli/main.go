@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -77,7 +78,16 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(createCmd, balanceCmd, sendCmd, seedCmd, verifyCmd, webhookCmd)
+	var splitCmd = &cobra.Command{
+		Use:   "split [original_tx_id] [requester_tag] [friend_tag1,friend_tag2...]",
+		Short: "Split a bill with friends",
+		Args:  cobra.ExactArgs(3),
+		Run: func(cmd *cobra.Command, args []string) {
+			splitBill(args[0], args[1], args[2])
+		},
+	}
+
+	rootCmd.AddCommand(createCmd, balanceCmd, sendCmd, seedCmd, verifyCmd, webhookCmd, splitCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -168,6 +178,35 @@ func seedData() {
 	// Wait a bit or simplly proceed
 	fmt.Println("Sending 100 from alice to bob...")
 	sendMoney("alice", "bob", "100", "test transfer")
+}
+
+func splitBill(txIDStr, requesterTag, friendsStr string) {
+	var txID int
+	fmt.Sscanf(txIDStr, "%d", &txID)
+
+	requesterID, _ := resolveUser(requesterTag)
+	if requesterID == 0 {
+		fmt.Printf("User %s not found\n", requesterTag)
+		return
+	}
+
+	friendTags := strings.Split(friendsStr, ",")
+	var friendIDs []int
+	for _, tag := range friendTags {
+		fid, _ := resolveUser(strings.TrimSpace(tag))
+		if fid != 0 {
+			friendIDs = append(friendIDs, fid)
+		}
+	}
+
+	payload := map[string]interface{}{
+		"original_transaction_id": txID,
+		"requester_id":            requesterID,
+		"friend_ids":              friendIDs,
+	}
+
+	resp := post(ledgerSvcURL+"/payments/split", payload)
+	fmt.Println("Split Bill Response:", resp)
 }
 
 func resolveUser(tag string) (int, int) {
